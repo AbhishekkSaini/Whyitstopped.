@@ -5,7 +5,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import { getFailureSynthesis } from '../services/geminiService';
 
 interface InsightsDashboardProps {
   ideas: AbandonedIdea[];
@@ -29,18 +28,12 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const InsightsDashboard: React.FC<InsightsDashboardProps> = ({ ideas }) => {
-  const [synthesis, setSynthesis] = useState<SynthesisResult>({ text: 'Analyzing repository trends...', sources: [] });
-  const [loading, setLoading] = useState(true);
+const [synthesis, setSynthesis] = useState<SynthesisResult>({
+  text: 'Analyzing repository trends...',
+  sources: []
+});  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchSynthesis = async () => {
-      setLoading(true);
-      const result = await getFailureSynthesis(ideas);
-      setSynthesis(result);
-      setLoading(false);
-    };
-    fetchSynthesis();
-  }, [ideas]);
+  
 
   const reasonStats = useMemo(() => {
     const counts: Record<string, number> = {};

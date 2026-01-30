@@ -3,8 +3,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { AbandonedIdea, DeathStage, FailureReason } from '../../types';
 import { DEATH_STAGES, FAILURE_REASONS } from '../constants';
 import { format } from 'date-fns';
-import { getQuickAnalysis } from '../services/geminiService';
-
+const safeFormatDate = (date?: string)=>{
+  if (!date) return 'Unknown date';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return 'Unknown date';
+  return format(d, 'MMM dd, yyyy');
+};
 interface ArchiveListProps {
   ideas: AbandonedIdea[];
   onDelete?: (id: string) => void;
@@ -43,12 +47,7 @@ const QuickAnalysisTag: React.FC<{ description: string }> = ({ description }) =>
     let active = true;
     const fetch = async () => {
       setLoading(true);
-      const res = await getQuickAnalysis(description);
-      if (active) {
-        setAnalysis(res);
-        setLoading(false);
-      }
-    };
+    }
     fetch();
     return () => { active = false; };
   }, [description]);
@@ -140,7 +139,10 @@ const ArchiveList: React.FC<ArchiveListProps> = ({ ideas, onDelete }) => {
             <div className="md:w-32 flex-shrink-0 pt-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Recorded</span>
               <div className="text-slate-900 font-bold text-sm">
-                {format(new Date(idea.timestamp), 'MMM dd, yyyy')}
+                
+                {safeFormatDate(idea.created_at)
+}
+                
               </div>
               <div className="text-[10px] text-slate-400 mono mt-1">{idea.id}</div>
             </div>

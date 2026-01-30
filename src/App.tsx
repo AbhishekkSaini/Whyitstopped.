@@ -82,11 +82,23 @@ const handleNewSubmission = (
 
   
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Confirm deletion: This action will permanently remove this record from the local session archive.")) {
-      setIdeas(prev => prev.filter(idea => idea.id !== id));
-    }
-  };
+const handleDelete = async (id: string) => {
+  if (!window.confirm('Permanently delete this record?')) return;
+
+  const { error } = await supabase
+    .from('ideas')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  // update UI after DB delete
+  setIdeas(prev => prev.filter(idea => idea.id !== id));
+};
+
 
   const renderContent = () => {
     // Only show published ideas in the archive and dashboard
