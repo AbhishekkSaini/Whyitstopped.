@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { DeathStage, FailureReason, AbandonedIdea } from '../../types';
-import { DEATH_STAGES, FAILURE_REASONS } from '../constants';
+import { DeathStage, FailureReason, AbandonedIdea, FailureTimeline } from '../../types';
+import { DEATH_STAGES, FAILURE_REASONS, FAILED_ASSUMPTIONS, HIDDEN_COSTS, AUDIENCE_TAGS } from '../constants';
 
 interface SubmissionFormProps {
   // Fix: Exclude 'status' from the expected submission data as it's handled by the parent component
@@ -17,6 +17,11 @@ const SubmissionForm: React.FC<SubmissionFormProps> = ({ onSubmit, onCancel }) =
     primaryReason: FailureReason.NO_TRACTION,
     secondaryReasons: [] as FailureReason[],
     reflection: '',
+    failedAssumptions: [] as string[],
+    ifRestarted: '',
+    timeline: {} as Partial<FailureTimeline>,
+    hiddenCosts: [] as string[],
+    audienceTags: [] as string[],
     isSolo: true,
     isTechHeavy: false,
   });
@@ -31,8 +36,28 @@ const SubmissionForm: React.FC<SubmissionFormProps> = ({ onSubmit, onCancel }) =
     } else if (formData.description.trim().length < 40) {
       newErrors.description = 'Please provide a more clinical description (min 40 chars) for research quality.';
     }
+    if (formData.failedAssumptions.length === 0) {
+      newErrors.failedAssumptions = 'Select at least one failed assumption.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleMulti = (key: 'failedAssumptions' | 'hiddenCosts' | 'audienceTags', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: prev[key].includes(value)
+        ? prev[key].filter(v => v !== value)
+        : [...prev[key], value],
+    }));
+    if (key === 'failedAssumptions' && errors.failedAssumptions) setErrors(prev => ({ ...prev, failedAssumptions: '' }));
+  };
+
+  const setTimeline = (field: keyof FailureTimeline, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      timeline: { ...prev.timeline, [field]: value || undefined },
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -124,7 +149,7 @@ Submission received. Thank you for contributing to the archive.            </p>
         {/* Basic Info */}
         <section className="space-y-6">
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Project Identifier (Optional)</label>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Project Identifier (Optional)</label>
             <input 
               type="text" 
               value={formData.title}
@@ -135,7 +160,7 @@ Submission received. Thank you for contributing to the archive.            </p>
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Technical & Strategic Intent <span className="text-rose-500">*</span></label>
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Technical & Strategic Intent <span className="text-rose-500">*</span></label>
             <textarea 
               rows={5}
               value={formData.description}
@@ -152,7 +177,7 @@ Submission received. Thank you for contributing to the archive.            </p>
 
         {/* The Stage */}
         <section>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Maturity at Stopping Point</label>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-4">Maturity at Stopping Point</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {DEATH_STAGES.map(stage => (
               <button
@@ -169,7 +194,7 @@ Submission received. Thank you for contributing to the archive.            </p>
 
         {/* Primary Reason */}
         <section>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Primary Lethality Factor</label>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-4">Primary Lethality Factor</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {FAILURE_REASONS.map(reason => (
               <button
@@ -183,6 +208,35 @@ Submission received. Thank you for contributing to the archive.            </p>
               </button>
             ))}
           </div>
+        </section>
+
+        {/* What I Got Wrong — required */}
+        <section>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-4">
+            What assumption failed? <span className="text-rose-500">*</span> (select one or more)
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {FAILED_ASSUMPTIONS.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleMulti('failedAssumptions', opt)}
+                className={`px-4 py-3 text-xs text-left border rounded transition-all flex items-center gap-3 ${
+                  formData.failedAssumptions.includes(opt)
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full border flex-shrink-0 ${
+                  formData.failedAssumptions.includes(opt) ? 'bg-white border-white' : 'bg-slate-100 border-slate-300'
+                }`} />
+                {opt}
+              </button>
+            ))}
+          </div>
+          {errors.failedAssumptions && (
+            <p className="mt-2 text-[10px] text-rose-500 font-bold uppercase tracking-tight">{errors.failedAssumptions}</p>
+          )}
         </section>
 
         {/* Context */}
@@ -209,7 +263,7 @@ Submission received. Thank you for contributing to the archive.            </p>
 
         {/* Reflection */}
         <section>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Post-Mortem Synthesis (One Sentence)</label>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Post-Mortem Synthesis (One Sentence)</label>
           <textarea 
             rows={2}
             value={formData.reflection}
@@ -219,6 +273,87 @@ Submission received. Thank you for contributing to the archive.            </p>
           />
         </section>
 
+        {/* If I Restarted This — optional */}
+        <section>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">
+            If you restarted this today, what would you do differently? (one sentence, optional)
+          </label>
+          <textarea 
+            rows={2}
+            value={formData.ifRestarted}
+            onChange={e => setFormData(f => ({ ...f, ifRestarted: e.target.value }))}
+            placeholder="Example: I would validate distribution before building."
+            className="w-full bg-white border border-slate-200 px-4 py-3 rounded text-sm focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-slate-300 transition-all"
+          />
+        </section>
+
+        {/* Failure Timeline — optional */}
+        <section className="p-6 bg-slate-50 border border-slate-200 rounded-lg space-y-4">
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest">
+            Failure timeline (optional — approximate dates fine)
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-[11px] text-slate-600 uppercase tracking-wider mb-1">Idea conceived</label>
+              <input type="text" value={formData.timeline?.ideaConceived ?? ''} onChange={e => setTimeline('ideaConceived', e.target.value)} placeholder="e.g. 2024-01" className="w-full bg-white border border-slate-200 px-3 py-2 rounded text-sm focus:outline-none focus:border-slate-400" />
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-600 uppercase tracking-wider mb-1">MVP completed</label>
+              <input type="text" value={formData.timeline?.mvpCompleted ?? ''} onChange={e => setTimeline('mvpCompleted', e.target.value)} placeholder="e.g. 2024-03" className="w-full bg-white border border-slate-200 px-3 py-2 rounded text-sm focus:outline-none focus:border-slate-400" />
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-600 uppercase tracking-wider mb-1">First user</label>
+              <input type="text" value={formData.timeline?.firstUser ?? ''} onChange={e => setTimeline('firstUser', e.target.value)} placeholder="e.g. 2024-04" className="w-full bg-white border border-slate-200 px-3 py-2 rounded text-sm focus:outline-none focus:border-slate-400" />
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-600 uppercase tracking-wider mb-1">Abandoned</label>
+              <input type="text" value={formData.timeline?.abandoned ?? ''} onChange={e => setTimeline('abandoned', e.target.value)} placeholder="e.g. 2024-06" className="w-full bg-white border border-slate-200 px-3 py-2 rounded text-sm focus:outline-none focus:border-slate-400" />
+            </div>
+          </div>
+        </section>
+
+        {/* Hidden cost — optional */}
+        <section>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-4">
+            Hidden cost that killed momentum (optional, multi-select)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {HIDDEN_COSTS.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleMulti('hiddenCosts', opt)}
+                className={`px-3 py-2 text-[11px] border rounded transition-all ${
+                  formData.hiddenCosts.includes(opt) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Who this is useful for — optional */}
+        <section>
+          <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-4">
+            Who this is useful for (optional)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {AUDIENCE_TAGS.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggleMulti('audienceTags', opt)}
+                className={`px-3 py-2 text-[11px] border rounded transition-all ${
+                  formData.audienceTags.includes(opt) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <div className="pt-8 border-t border-slate-200">
           <button
             type="submit"
@@ -226,7 +361,7 @@ Submission received. Thank you for contributing to the archive.            </p>
           >
             Commit to Archive
           </button>
-          <p className="text-[9px] text-slate-400 text-center mt-6 uppercase tracking-widest font-medium">
+          <p className="text-[11px] text-slate-500 text-center mt-6 uppercase tracking-widest font-medium">
             Subject to manual review before publication. No personal identifiers are stored.
           </p>
         </div>

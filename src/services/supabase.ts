@@ -9,7 +9,7 @@ let supabase: SupabaseClient | null = null;
 if (supabaseUrl && supabaseAnonKey) {
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 } else {
-  console.warn('Supabase env missing — app running without DB');
+  console.warn('Read-only archive mode enabled — no database connection.');
 }
 
 export { supabase };
