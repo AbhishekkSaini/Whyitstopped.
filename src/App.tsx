@@ -57,30 +57,36 @@ const handleNewSubmission = (
     status: 'pending',
   };
 
-  // ui updated bc finally
+  // updated bc finally
   setIdeas([newIdea, ...ideas]);
 
-  supabase.from('ideas').insert([
-  {
-    title: sanitizedIdea.title,
-    description: sanitizedIdea.description,
-    reflection: sanitizedIdea.reflection,
-    stage: sanitizedIdea.stage,
-    primary_reason: sanitizedIdea.primaryReason,
-    secondary_reasons: sanitizedIdea.secondaryReasons,
-    is_solo: sanitizedIdea.isSolo,
-    is_tech_heavy: sanitizedIdea.isTechHeavy,
-    status: 'pending',
-  },
-]).then(({ error }) => {
-  if (error) {
-    console.error('Supabase insert failed:', error);
+  // 👇 SAFE GUARD
+  if (!supabase) {
+    console.warn('Supabase disabled — saving only locally');
+    return;
   }
-});
+
+  supabase
+    .from('ideas')
+    .insert([
+      {
+        title: sanitizedIdea.title,
+        description: sanitizedIdea.description,
+        reflection: sanitizedIdea.reflection,
+        stage: sanitizedIdea.stage,
+        primary_reason: sanitizedIdea.primaryReason,
+        secondary_reasons: sanitizedIdea.secondaryReasons,
+        is_solo: sanitizedIdea.isSolo,
+        is_tech_heavy: sanitizedIdea.isTechHeavy,
+        status: 'pending',
+      },
+    ])
+    .then(({ error }) => {
+      if (error) {
+        console.error('Supabase insert failed:', error);
+      }
+    });
 };
-
-
-  
 
 const handleDelete = async (id: string) => {
   if (!window.confirm('Permanently delete this record?')) return;
